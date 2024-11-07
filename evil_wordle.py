@@ -432,12 +432,9 @@ def get_feedback(remaining_secret_words, guessed_word):
 
     for word in remaining_secret_words:
         feedback = tuple(get_feedback_colors(word, guessed_word))
-        if feedback not in feedback_groups:
-            feedback_groups[feedback] = []
-        feedback_groups[feedback].append(word)
+        feedback_groups.setdefault(feedback, []).append(word)
 
     def get_family_difficulty(feedback_pattern):
-        """Calculates difficulty of the word family based on its feedback pattern."""
         return sum([WordFamily.COLOR_DIFFICULTY[color] for color in feedback_pattern])
 
     hardest_family = None
@@ -446,11 +443,11 @@ def get_feedback(remaining_secret_words, guessed_word):
     for feedback, words in feedback_groups.items():
         family_difficulty = get_family_difficulty(feedback)
 
-        if (hardest_family is None or
+        if hardest_family is None or (
             len(words) > len(hardest_family) or
             (len(words) == len(hardest_family) and family_difficulty > get_family_difficulty(hardest_feedback)) or
-            (len(words) == len(hardest_family) and family_difficulty == get_family_difficulty(hardest_feedback) and feedback < hardest_feedback)):
-
+            (len(words) == len(hardest_family) and family_difficulty == get_family_difficulty(hardest_feedback) and feedback < hardest_feedback)
+        ):
             hardest_family = words
             hardest_feedback = feedback
 
