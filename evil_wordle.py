@@ -380,33 +380,25 @@ def get_feedback_colors(secret_word, guessed_word):
           - Letters not in secret_word are marked with NOT_IN_WORD_COLOR. The list will be of
             length 5 with the ANSI coloring in each index as the returned value.
     """
-    feedback = [None] * NUM_LETTERS
-    secret_word_used = [False] * NUM_LETTERS
-    guessed_word_used = [False] * NUM_LETTERS
+    feedback_colors = [NO_COLOR] * len(guessed_word)
+    secret_word_copy = list(secret_word)
 
-    # Modify this! This is just starter code.
-    for i in range(NUM_LETTERS):
+    for i in range(len(guessed_word)):
         if guessed_word[i] == secret_word[i]:
-            feedback[i] = CORRECT_COLOR
-            secret_word_used[i] = True
-            guessed_word_used[i] = True
+            feedback_colors[i] = CORRECT_COLOR
+            secret_word_copy[i] = None
 
-    for i in range(NUM_LETTERS):
-        if feedback[i] is None:
-            for j in range(NUM_LETTERS):
-                if (not secret_word_used[j] and
-                guessed_word[i] == secret_word[j] and
-                not guessed_word_used[i]):
-                    feedback[i] = WRONG_SPOT_COLOR
-                    secret_word_used[j] = True
-                    guessed_word_used[i] = True
-                    break
+    for i in range(len(guessed_word)):
+        if feedback_colors[i] == NO_COLOR:
+            if guessed_word[i] in secret_word_copy:
+                feedback_colors[i] = WRONG_SPOT_COLOR
+                secret_word_copy[secret_word_copy.index(guessed_word[i])] = None
 
-    for i in range(NUM_LETTERS):
-        if feedback[i] is None:
-            feedback[i] = NOT_IN_WORD_COLOR
+    for i in range(len(guessed_word)):
+        if feedback_colors[i] == NO_COLOR:
+            feedback_colors[i] = NOT_IN_WORD_COLOR
 
-    return feedback
+    return feedback_colors
 
 
 # Modify this function. You may delete this comment when you are done.
@@ -428,31 +420,23 @@ def get_feedback(remaining_secret_words, guessed_word):
             2. Difficulty of the feedback
             3. Lexicographical ordering of the feedback (ASCII value comparisons)
     """
-    feedback_groups = {}
+    feedback_color_patterns = {}
 
     for word in remaining_secret_words:
-        feedback = tuple(get_feedback_colors(word, guessed_word))
-        feedback_groups.setdefault(feedback, []).append(word)
+        feedback_colors = get_feedback_colors(word, guessed_word)
+        feedback_color_tuple = tuple(feedback_colors)
 
-    def get_family_difficulty(feedback_pattern):
-        return sum([WordFamily.COLOR_DIFFICULTY[color] for color in feedback_pattern])
+        if feedback_color_tuple not in feedback_color_patterns:
+            feedback_color_patterns[feedback_color_tuple] = []
 
-    hardest_family = None
-    hardest_feedback = None
+        feedback_color_patterns[feedback_color_tuple].append(word)
 
-    for feedback, words in feedback_groups.items():
-        family_difficulty = get_family_difficulty(feedback)
+    word_families = [
+        WordFamily(feedback_colors, words)
+        for feedback_colors, words in feedback_color_patterns.items()
+    ]
 
-        if hardest_family is None or (
-            len(words) > len(hardest_family) or
-            (len(words) == len(hardest_family) and family_difficulty > get_family_difficulty(hardest_feedback)) or
-            (len(words) == len(hardest_family) and family_difficulty == get_family_difficulty(hardest_feedback) and feedback < hardest_feedback)
-        ):
-            hardest_family = words
-            hardest_feedback = feedback
-
-    feedback_colors = list(hardest_feedback)
-    return feedback_colors, hardest_family
+    return word_families
 
 # DO NOT modify this function.
 def main():
