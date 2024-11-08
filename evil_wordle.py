@@ -456,7 +456,7 @@ def get_feedback(remaining_secret_words, guessed_word):
             hardest_feedback = feedback
 
     feedback_colors = list(hardest_feedback)
-    return feedback_colors, hardest_family
+    return feedback_colors, sorted(hardest_family)
 
 # DO NOT modify this function.
 def main():
