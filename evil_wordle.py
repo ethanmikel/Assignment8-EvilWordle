@@ -374,31 +374,22 @@ def get_feedback_colors(secret_word, guessed_word):
           - Letters not in secret_word are marked with NOT_IN_WORD_COLOR. The list will be of
             length 5 with the ANSI coloring in each index as the returned value.
     """
-    feedback = [None] * NUM_LETTERS
+    feedback = [NOT_IN_WORD_COLOR] * NUM_LETTERS
     secret_word_used = [False] * NUM_LETTERS
-    guessed_word_used = [False] * NUM_LETTERS
 
-    # Modify this! This is just starter code.
     for i in range(NUM_LETTERS):
         if guessed_word[i] == secret_word[i]:
             feedback[i] = CORRECT_COLOR
             secret_word_used[i] = True
-            guessed_word_used[i] = True
 
     for i in range(NUM_LETTERS):
-        if feedback[i] is None:
+        if feedback[i] == NOT_IN_WORD_COLOR:
             for j in range(NUM_LETTERS):
-                if (not secret_word_used[j] and
-                guessed_word[i] == secret_word[j] and
-                not guessed_word_used[i]):
+                if (not secret_word_used[j] and 
+                    guessed_word[i] == secret_word[j]):
                     feedback[i] = WRONG_SPOT_COLOR
                     secret_word_used[j] = True
-                    guessed_word_used[i] = True
                     break
-
-    for i in range(NUM_LETTERS):
-        if feedback[i] is None:
-            feedback[i] = NOT_IN_WORD_COLOR
 
     return feedback
 
@@ -430,17 +421,20 @@ def get_feedback(remaining_secret_words, guessed_word):
             feedback_groups[feedback] = []
         feedback_groups[feedback].append(word)
 
-    word_families = [
-        WordFamily(feedback, words) for feedback, words in feedback_groups.items()
-    ]
+    word_families = [WordFamily(feedback, words) for feedback, words in feedback_groups.items()]
 
     word_families.sort(
         key=lambda family: (-len(family.words), -family.difficulty, family.feedback_colors)
     )
 
+    print("\n--- Word Families After Sorting ---")
+    for family in word_families:
+        print(f"Pattern: {family.feedback_colors}, Size: {len(family.words)}, Difficulty: {family.difficulty}")
+
     hardest_family = word_families[0]
     feedback_colors = list(hardest_family.feedback_colors)
     return feedback_colors, hardest_family.words
+
 
 
 # DO NOT modify this function.
