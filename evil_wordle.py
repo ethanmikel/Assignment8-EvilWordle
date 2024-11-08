@@ -172,9 +172,7 @@ class WordFamily:
         self.feedback_colors = feedback_colors
         self.words = words
         # implement the difficulty calculation here.
-        self.difficulty = sum(self.COLOR_DIFFICULTY[color] for color in feedback_colors)
-        self.difficulty += len(words)
-
+        self.difficulty = sum(self.COLOR_DIFFICULTY.get(color, 0) for color in feedback_colors)
 
     # Modify this method. You may delete this comment when you are done.
     def __lt__(self, other):
@@ -432,31 +430,15 @@ def get_feedback(remaining_secret_words, guessed_word):
             feedback_groups[feedback] = []
         feedback_groups[feedback].append(word)
 
-    def get_family_difficulty(feedback_pattern):
-        return sum([WordFamily.COLOR_DIFFICULTY[color] for color in feedback_pattern])
+    word_families = [
+        WordFamily(feedback, words) for feedback, words in feedback_groups.items()
+    ]
 
-    hardest_family = None
-    hardest_feedback = None
+    word_families = fast_sort(word_families)
 
-    for feedback, words in feedback_groups.items():
-        family_difficulty = get_family_difficulty(feedback)
-        if hardest_family is None or (
-            len(words) > len(hardest_family) or
-            (
-                len(words) == len(hardest_family) and
-                family_difficulty > get_family_difficulty(hardest_feedback)
-            ) or
-            (
-                len(words) == len(hardest_family) and
-                family_difficulty == get_family_difficulty(hardest_feedback) and
-                feedback < hardest_feedback
-            )
-        ):
-            hardest_family = words
-            hardest_feedback = feedback
-
-    feedback_colors = list(hardest_feedback)
-    return feedback_colors, sorted(hardest_family)
+    hardest_family = word_families[0]
+    feedback_colors = list(hardest_family.feedback_colors)
+    return feedback_colors, hardest_family.words
 
 # DO NOT modify this function.
 def main():
