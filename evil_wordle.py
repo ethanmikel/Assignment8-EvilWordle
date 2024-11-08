@@ -123,12 +123,11 @@ class Keyboard:
         post: Returns a formatted string with each letter colored according to feedback
               and arranged to match a typical keyboard layout.
         """
-        rows = self.rows
         indentations = ["", " ", "   "]
 
         formatted_rows = []
 
-        for i, row in enumerate(rows):
+        for i, row in enumerate(self.rows):
             row_str = indentations[i] + " ".join(
                 color_word(self.colors[letter], letter) for letter in row
             )
@@ -172,11 +171,8 @@ class WordFamily:
         """
         self.feedback_colors = feedback_colors
         self.words = words
-        self.difficulty = 0
         # implement the difficulty calculation here.
-        for color in feedback_colors:
-            self.difficulty += self.COLOR_DIFFICULTY.get(color, 0)
-
+        self.difficulty = sum(self.COLOR_DIFFICULTY[color] for color in feedback_colors)
         self.difficulty += len(words)
 
 
@@ -380,25 +376,33 @@ def get_feedback_colors(secret_word, guessed_word):
           - Letters not in secret_word are marked with NOT_IN_WORD_COLOR. The list will be of
             length 5 with the ANSI coloring in each index as the returned value.
     """
-    feedback_colors = [NO_COLOR] * len(guessed_word)
-    secret_word_copy = list(secret_word)
+    feedback = [None] * NUM_LETTERS
+    secret_word_used = [False] * NUM_LETTERS
+    guessed_word_used = [False] * NUM_LETTERS
 
-    for i in range(len(guessed_word)):
+    # Modify this! This is just starter code.
+    for i in range(NUM_LETTERS):
         if guessed_word[i] == secret_word[i]:
-            feedback_colors[i] = CORRECT_COLOR
-            secret_word_copy[i] = None
+            feedback[i] = CORRECT_COLOR
+            secret_word_used[i] = True
+            guessed_word_used[i] = True
 
-    for i in range(len(guessed_word)):
-        if feedback_colors[i] == NO_COLOR:
-            if guessed_word[i] in secret_word_copy:
-                feedback_colors[i] = WRONG_SPOT_COLOR
-                secret_word_copy[secret_word_copy.index(guessed_word[i])] = None
+    for i in range(NUM_LETTERS):
+        if feedback[i] is None:
+            for j in range(NUM_LETTERS):
+                if (not secret_word_used[j] and
+                guessed_word[i] == secret_word[j] and
+                not guessed_word_used[i]):
+                    feedback[i] = WRONG_SPOT_COLOR
+                    secret_word_used[j] = True
+                    guessed_word_used[i] = True
+                    break
 
-    for i in range(len(guessed_word)):
-        if feedback_colors[i] == NO_COLOR:
-            feedback_colors[i] = NOT_IN_WORD_COLOR
+    for i in range(NUM_LETTERS):
+        if feedback[i] is None:
+            feedback[i] = NOT_IN_WORD_COLOR
 
-    return feedback_colors
+    return feedback
 
 
 # Modify this function. You may delete this comment when you are done.
@@ -420,23 +424,39 @@ def get_feedback(remaining_secret_words, guessed_word):
             2. Difficulty of the feedback
             3. Lexicographical ordering of the feedback (ASCII value comparisons)
     """
-    feedback_color_patterns = {}
+    feedback_groups = {}
 
     for word in remaining_secret_words:
-        feedback_colors = get_feedback_colors(word, guessed_word)
-        feedback_color_tuple = tuple(feedback_colors)
+        feedback = tuple(get_feedback_colors(word, guessed_word))
+        if feedback not in feedback_groups:
+            feedback_groups[feedback] = []
+        feedback_groups[feedback].append(word)
 
-        if feedback_color_tuple not in feedback_color_patterns:
-            feedback_color_patterns[feedback_color_tuple] = []
+    def get_family_difficulty(feedback_pattern):
+        return sum([WordFamily.COLOR_DIFFICULTY[color] for color in feedback_pattern])
 
-        feedback_color_patterns[feedback_color_tuple].append(word)
+    hardest_family = None
+    hardest_feedback = None
 
-    word_families = [
-        WordFamily(feedback_colors, words)
-        for feedback_colors, words in feedback_color_patterns.items()
-    ]
+    for feedback, words in feedback_groups.items():
+        family_difficulty = get_family_difficulty(feedback)
+        if hardest_family is None or (
+            len(words) > len(hardest_family) or
+            (
+                len(words) == len(hardest_family) and
+                family_difficulty > get_family_difficulty(hardest_feedback)
+            ) or
+            (
+                len(words) == len(hardest_family) and
+                family_difficulty == get_family_difficulty(hardest_feedback) and
+                feedback < hardest_feedback
+            )
+        ):
+            hardest_family = words
+            hardest_feedback = feedback
 
-    return word_families
+    feedback_colors = list(hardest_feedback)
+    return feedback_colors, hardest_family
 
 # DO NOT modify this function.
 def main():
