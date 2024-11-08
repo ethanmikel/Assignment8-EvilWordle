@@ -434,11 +434,14 @@ def get_feedback(remaining_secret_words, guessed_word):
         WordFamily(feedback, words) for feedback, words in feedback_groups.items()
     ]
 
-    word_families = fast_sort(word_families)
+    word_families.sort(
+        key=lambda family: (-len(family.words), -family.difficulty, family.feedback_colors)
+    )
 
     hardest_family = word_families[0]
     feedback_colors = list(hardest_family.feedback_colors)
     return feedback_colors, hardest_family.words
+
 
 # DO NOT modify this function.
 def main():
